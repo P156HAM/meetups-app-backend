@@ -1,9 +1,8 @@
 const middy = require('@middy/core');
 const { validateToken } = require("../../middlewares/auth");
-const { findMeetup } = require("../bookMeetup/helpers");
 const { sendResponse, sendError } = require("../../responses");
 const { validateFeedbackInput } = require('../../middlewares/bodyValidation');
-const { updateFeedback, findUser } = require('./helpers');
+const { updateFeedback, findUser, findMeetup } = require('./helpers');
 
 exports.handler = middy()
     .handler(async (event) => {
