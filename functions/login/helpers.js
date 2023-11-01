@@ -1,8 +1,8 @@
 import { db } from "../../services/db.js";
 const bcrypt = require('bcryptjs');
 
-export async function validateUser(userName, providedPassword) {
-    const userExist = await db.scan({
+export async function validateUser(userName, password) {
+   const userExist = await db.scan({
         TableName: "meetup-users-db",
         FilterExpression: "#userName = :userName",
         ExpressionAttributeNames: {
@@ -14,14 +14,13 @@ export async function validateUser(userName, providedPassword) {
     }).promise();
 
     if (userExist.Items && userExist.Items.length > 0) {
-        const storedPassowrd = userExist.Items[0].password
+        const storedPassword = userExist.Items[0].password
+        const isPasswordValid = await bcrypt.compare(password, storedPassword);
 
-        const isPasswordValid = bcrypt.compare(providedPassword, storedPassowrd)
-
-        if(isPasswordValid) {
-            return userExist.Items[0];
+        if (isPasswordValid) {
+            return { user: userExist.Items[0], isPasswordValid: true };
         }
-    } else {
-        throw new Error("Unauthorized")
     }
+    
+    return { user: null, isPasswordValid: false };
 }

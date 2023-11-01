@@ -10,22 +10,24 @@ exports.handler = middy()
         try {
             // Check if the event has a validation error response
             if (event.error) {
-                return sendError(event.error.statusCode, { message: event.error.message, details: event.error.details });
+                return sendError(event.error.statusCode, {
+                  message: event.error.message,
+                  details: event.error.details
+                });
             }
 
-            const { userName, providedPassword } = JSON.parse(event.body)
-            const user = await validateUser(userName, providedPassword);
-    
-            if (user) {
+            const { userName, password } = JSON.parse(event.body);
+            const { user, isPasswordValid } = await validateUser(userName, password);
+
+            if (isPasswordValid && user) {
                 const token = await createToken(user.userName, user.PK);
-                return sendResponse(200, { sucess: true, token: token })
+                return sendResponse(200, { success: true, token: token });
             } else {
-                return (401, { sucess: false, message: "Invalid credentials" })
+                return sendError(401, { success: false, message: "Invalid credentials" });
             }
     
         } catch (error) {
-            return sendError(400, { message: error.message })
+            return sendError(400, { message: error.message });
         }
     })
-    .use(validateUserInputLogin)
-  
+    .use(validateUserInputLogin);

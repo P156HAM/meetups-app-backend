@@ -56,7 +56,6 @@ export async function updateFeedback(meetup, feedback, rating, user) {
         feedback: feedback
     }
 
-    console.log(feedbackToSend)
 
     const meetupParams = {
         TableName: 'meetups-db',

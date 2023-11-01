@@ -37,48 +37,43 @@ export async function findMeetup (name) {
     
 }
 export async function updateMeetupAndUser(meetup, userId) {
-    console.log(userId)
-
-    // Increment registeredPeople and decrement totalTickets
-    meetup.registeredPeople += 1;
-    meetup.totalTickets -= 1;
-
-    const meetupParams = {
-        TableName: 'meetups-db',
-        Item: meetup,
-    };
-
-    const userParams = {
-        TableName: 'meetup-users-db',
-        Key: {
-            'PK': userId
-        }
-    };
-    
     try {
-        // Update the meetup item
+        // Check if there are available tickets
+        if (meetup.totalTickets <= 0 ) {
+            throw new Error("No available tickets, better luck next time!");
+        }
+
+        meetup.registeredPeople += 1;
+        meetup.totalTickets -= 1;
+
+        const meetupParams = {
+            TableName: 'meetups-db',
+            Item: meetup,
+        };
+
+        const userParams = {
+            TableName: 'meetup-users-db',
+            Key: {
+                'PK': userId,
+            },
+        };
+
         await db.put(meetupParams).promise();
 
-        // Retrieve and update the user item
         const user = await db.get(userParams).promise();
-        console.log(user.Item);
+
         if (user.Item) {
-            // Add the updated meetup to the user's list of registered meetups
             if (!user.Item.registeredMeetups) {
                 user.Item.registeredMeetups = [];
             }
             user.Item.registeredMeetups.push(meetup.name);
 
-            // Update the user item
-            console.log(user.Item);
             const updateUserParams = {
                 TableName: 'meetup-users-db',
                 Item: user.Item,
             };
 
-            console.log(updateUserParams)
-            const result = await db.put(updateUserParams).promise();
-            console.log("updating db", result)
+            await db.put(updateUserParams).promise();
         }
         return 'Updated meetup and user successfully';
     } catch (error) {
