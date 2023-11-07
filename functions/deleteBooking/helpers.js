@@ -38,29 +38,34 @@ export async function findMeetup (name) {
 export async function updateMeetupAndUser(meetup, userId) {
 
     try {
-        if (meetup.registeredPeople <= 0 ) {
-            throw new Error("You have no tickets!");
-        }
-        // Increment registeredPeople and decrement totalTickets
-        meetup.registeredPeople -= 1;
-        meetup.totalTickets += 1;
-    
-        const meetupParams = {
-            TableName: 'meetups-db',
-            Item: meetup,
-        };
-    
+        // Retrieve and update the user item
         const userParams = {
             TableName: 'meetup-users-db',
             Key: {
                 'PK': userId
             }
         };
+
+        const user = await db.get(userParams).promise();
+        const removedMeetups = user.Item.registeredMeetups.filter((meetupName) => {
+            return meetupName === meetup.name;
+        });
+        
+        if (meetup.registeredPeople <= 0 ) {
+            throw new Error("You have no tickets!");
+        }
+        // Increment registeredPeople and decrement totalTickets
+        meetup.registeredPeople -= removedMeetups.length;
+        meetup.totalTickets += removedMeetups.length;
+    
+        const meetupParams = {
+            TableName: 'meetups-db',
+            Item: meetup,
+        };
+
         // Update the meetup item
         await db.put(meetupParams).promise();
 
-        // Retrieve and update the user item
-        const user = await db.get(userParams).promise();
         console.log(user.Item);
         if (user.Item) {
 
@@ -80,14 +85,3 @@ export async function updateMeetupAndUser(meetup, userId) {
         return `Error: ${error.message}`;
     }
 }
-
-            // // Find the index of the element to remove
-            // const indexToRemove = user.Item.registeredMeetups.indexOf(meetup.name);
-
-            // // Check if the element is in the array
-            // if (indexToRemove !== -1) {
-            // // Use splice to remove the element at the found index
-            // user.Item.registeredMeetups.splice(indexToRemove, 1);
-            // } else {
-            //     throw new Error("You are not registered in this meetup")
-            // }
